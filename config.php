@@ -66,6 +66,10 @@ if (mysqli_num_rows($check_table) == 0) {
             }
         }
     }
+} else {
+    // UKK Fix: Automatically convert old hashed passwords back to plaintext
+    mysqli_query($conn, "UPDATE users SET password = 'staff123' WHERE username = 'staff' AND length(password) > 50");
+    mysqli_query($conn, "UPDATE users SET password = 'manager123' WHERE username = 'manager' AND length(password) > 50");
 }
 
 /**
