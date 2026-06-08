@@ -57,6 +57,6 @@ CREATE TABLE IF NOT EXISTS `transactions` (
 -- Seed default users (password: staff123 / manager123)
 INSERT INTO `users` (`name`, `username`, `password`, `role`, `phone`)
 VALUES
-('Petugas Staff', 'staff', '$2y$12$8CKJG9j48PiQwYrQ/yfWG.BMktFiFbqCvL3AmLV1Lg4d7/goI0A9O', 'Staff', '08123456789'),
-('Warehouse Manager', 'manager', '$2y$12$ncHHFNg8k2Dq/NjmAXK/WOOVs/O8OBPRRL546audXKG/cnFw/z0s.', 'Warehouse Manager', '08123456780')
+('Petugas Staff', 'staff', 'staff123', 'Staff', '08123456789'),
+('Warehouse Manager', 'manager', 'manager123', 'Warehouse Manager', '08123456780')
 ON DUPLICATE KEY UPDATE `id`=`id`;
