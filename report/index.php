@@ -10,10 +10,11 @@ $end_date = $_GET['end_date'] ?? '';
 $tipe = $_GET['tipe'] ?? '';
 
 // Build SQL query based on filters
-$query = "SELECT transactions.*, items.nama_barang, items.kode_barang, users.name as operator 
+$query = "SELECT transactions.*, items.nama_barang, items.kode_barang, users.name as operator, suppliers.supplier_name 
           FROM transactions 
           JOIN items ON transactions.item_id = items.id 
           JOIN users ON transactions.user_id = users.id 
+          LEFT JOIN suppliers ON transactions.supplier_id = suppliers.id
           WHERE 1=1";
 
 $params = [];
@@ -64,10 +65,9 @@ $result = mysqli_stmt_get_result($stmt);
             <li><a href="/dashboard.php">Dashboard</a></li>
             <li><a href="/categories/index.php">Kategori Barang</a></li>
             <li><a href="/items/index.php">Data Barang</a></li>
-            <?php if ($role === 'Admin' || $role === 'Petugas'): ?>
-                <li><a href="/transactions/index.php">Transaksi Barang</a></li>
-            <?php endif; ?>
-            <?php if ($role === 'Admin'): ?>
+            <li><a href="/suppliers/index.php">Data Supplier</a></li>
+            <li><a href="/transactions/index.php">Transaksi Barang</a></li>
+            <?php if ($role === 'Warehouse Manager'): ?>
                 <li><a href="/users/index.php">Kelola User</a></li>
             <?php endif; ?>
             <li><a href="/report/index.php" class="active">Laporan</a></li>
@@ -118,7 +118,7 @@ $result = mysqli_stmt_get_result($stmt);
         <!-- Report Content -->
         <div class="report-header" style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 1.6rem; margin-bottom: 5px;">LAPORAN TRANSAKSI PERGUDANGAN</h1>
-            <p style="color: #666;">UKK RPL RPL Warehouse Management System</p>
+            <p style="color: #666;">UKK RPL Warehouse Management System</p>
             <?php if (!empty($start_date) || !empty($end_date)): ?>
                 <p style="font-size: 0.9rem; font-weight: bold; margin-top: 10px;">
                     Periode: 
@@ -138,10 +138,11 @@ $result = mysqli_stmt_get_result($stmt);
                         <th style="width: 100px;">Tanggal</th>
                         <th style="width: 120px;">Kode Barang</th>
                         <th>Nama Barang</th>
+                        <th>Supplier</th>
                         <th style="width: 80px;">Tipe</th>
                         <th style="width: 80px; text-align: center;">Jumlah</th>
                         <th>Keterangan</th>
-                        <th style="width: 150px;">Petugas/Operator</th>
+                        <th style="width: 150px;">Operator/Petugas</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -163,6 +164,7 @@ $result = mysqli_stmt_get_result($stmt);
                             <td><?= date('d-m-Y', strtotime($row['tanggal'])) ?></td>
                             <td><strong><?= esc($row['kode_barang']) ?></strong></td>
                             <td><?= esc($row['nama_barang']) ?></td>
+                            <td><?= esc($row['supplier_name'] ?? '-') ?></td>
                             <td>
                                 <?php if ($row['tipe'] === 'Masuk'): ?>
                                     <span style="color: var(--success-color); font-weight: bold;">Masuk</span>
@@ -177,7 +179,7 @@ $result = mysqli_stmt_get_result($stmt);
                     <?php 
                         }
                     } else {
-                        echo "<tr><td colspan='8' style='text-align:center;'>Tidak ada data transaksi yang cocok dengan filter.</td></tr>";
+                        echo "<tr><td colspan='9' style='text-align:center;'>Tidak ada data transaksi yang cocok dengan filter.</td></tr>";
                     }
                     ?>
                 </tbody>
@@ -200,7 +202,7 @@ $result = mysqli_stmt_get_result($stmt);
             <p>Jakarta, <?= date('d F Y') ?></p>
             <br><br><br>
             <p style="text-decoration: underline; font-weight: bold;"><?= esc($_SESSION['name']) ?></p>
-            <p>Staff Pergudangan</p>
+            <p><?= esc($role) ?></p>
         </div>
     </div>
 

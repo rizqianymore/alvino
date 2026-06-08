@@ -6,8 +6,9 @@ $role = $_SESSION['role'];
 $error = '';
 $success = '';
 
-// Check permission for modifications (Admin & Petugas only)
-$can_edit = ($role === 'Admin' || $role === 'Petugas');
+// Check permission for modifications (Staff & Warehouse Manager can add/edit, only Warehouse Manager can delete)
+$can_edit = ($role === 'Staff' || $role === 'Warehouse Manager');
+$can_delete = ($role === 'Warehouse Manager');
 
 // Create upload directory if not exists
 $upload_dir = '../uploads/';
@@ -34,10 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
             $kode_barang = trim($_POST['kode_barang'] ?? '');
             $deskripsi = trim($_POST['deskripsi'] ?? '');
             $stok = intval($_POST['stok'] ?? 0);
+            $price = floatval($_POST['price'] ?? 0);
             $foto_name = null;
 
-            if (empty($nama_barang) || empty($kode_barang) || $category_id <= 0) {
-                $error = "Nama barang, kode barang, dan kategori wajib diisi.";
+            if (empty($nama_barang) || empty($kode_barang) || $category_id <= 0 || $price < 0) {
+                $error = "Nama barang, kode barang, kategori, dan harga wajib diisi dengan benar.";
             } else {
                 // Handle File Upload
                 if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
@@ -81,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
                     if (mysqli_stmt_num_rows($check_stmt) > 0) {
                         $error = "Kode barang sudah terdaftar.";
                     } else {
-                        $stmt = mysqli_prepare($conn, "INSERT INTO items (category_id, nama_barang, kode_barang, deskripsi, stok, foto) VALUES (?, ?, ?, ?, ?, ?)");
-                        mysqli_stmt_bind_param($stmt, "isssis", $category_id, $nama_barang, $kode_barang, $deskripsi, $stok, $foto_name);
+                        $stmt = mysqli_prepare($conn, "INSERT INTO items (category_id, nama_barang, kode_barang, deskripsi, stok, price, foto) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        mysqli_stmt_bind_param($stmt, "isssids", $category_id, $nama_barang, $kode_barang, $deskripsi, $stok, $price, $foto_name);
                         
                         if (mysqli_stmt_execute($stmt)) {
                             $success = "Barang berhasil ditambahkan.";
@@ -104,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
             $kode_barang = trim($_POST['kode_barang'] ?? '');
             $deskripsi = trim($_POST['deskripsi'] ?? '');
             $stok = intval($_POST['stok'] ?? 0);
+            $price = floatval($_POST['price'] ?? 0);
             $foto_name = null;
 
             // Fetch current foto
@@ -115,8 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
             $foto_name = $curr_row['foto'] ?? null;
             mysqli_stmt_close($curr_stmt);
 
-            if (empty($nama_barang) || empty($kode_barang) || $category_id <= 0) {
-                $error = "Nama barang, kode barang, dan kategori wajib diisi.";
+            if (empty($nama_barang) || empty($kode_barang) || $category_id <= 0 || $price < 0) {
+                $error = "Nama barang, kode barang, kategori, dan harga wajib diisi dengan benar.";
             } else {
                 // Handle File Upload if new image is provided
                 if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
@@ -162,8 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
                     if (mysqli_stmt_num_rows($check_stmt) > 0) {
                         $error = "Kode barang sudah terdaftar.";
                     } else {
-                        $stmt = mysqli_prepare($conn, "UPDATE items SET category_id = ?, nama_barang = ?, kode_barang = ?, deskripsi = ?, stok = ?, foto = ? WHERE id = ?");
-                        mysqli_stmt_bind_param($stmt, "isssisi", $category_id, $nama_barang, $kode_barang, $deskripsi, $stok, $foto_name, $id);
+                        $stmt = mysqli_prepare($conn, "UPDATE items SET category_id = ?, nama_barang = ?, kode_barang = ?, deskripsi = ?, stok = ?, price = ?, foto = ? WHERE id = ?");
+                        mysqli_stmt_bind_param($stmt, "isssidsi", $category_id, $nama_barang, $kode_barang, $deskripsi, $stok, $price, $foto_name, $id);
                         
                         if (mysqli_stmt_execute($stmt)) {
                             $success = "Barang berhasil diperbarui.";
@@ -178,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_edit) {
         }
 
         // DELETE ITEM
-        if (isset($_POST['delete_item'])) {
+        if (isset($_POST['delete_item']) && $can_delete) {
             $id = intval($_POST['id'] ?? 0);
             
             // Delete associated file
@@ -255,10 +258,9 @@ $token = generate_csrf_token();
             <li><a href="/dashboard.php">Dashboard</a></li>
             <li><a href="/categories/index.php">Kategori Barang</a></li>
             <li><a href="/items/index.php" class="active">Data Barang</a></li>
-            <?php if ($role === 'Admin' || $role === 'Petugas'): ?>
-                <li><a href="/transactions/index.php">Transaksi Barang</a></li>
-            <?php endif; ?>
-            <?php if ($role === 'Admin'): ?>
+            <li><a href="/suppliers/index.php">Data Supplier</a></li>
+            <li><a href="/transactions/index.php">Transaksi Barang</a></li>
+            <?php if ($role === 'Warehouse Manager'): ?>
                 <li><a href="/users/index.php">Kelola User</a></li>
             <?php endif; ?>
             <li><a href="/report/index.php">Laporan</a></li>
@@ -283,7 +285,7 @@ $token = generate_csrf_token();
             <div class="alert alert-success"><?= esc($success) ?></div>
         <?php endif; ?>
 
-        <!-- Form Tambah (Only Admin & Petugas) -->
+        <!-- Form Tambah (Only Staff & Manager) -->
         <?php if ($can_edit && !isset($_GET['edit_id'])): ?>
             <div class="form-modal-inline">
                 <h3>Tambah Barang Baru</h3>
@@ -317,14 +319,20 @@ $token = generate_csrf_token();
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="deskripsi">Deskripsi</label>
-                        <textarea id="deskripsi" name="deskripsi" class="form-control" rows="2" placeholder="Deskripsi Barang"></textarea>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="price">Harga Barang (Rp)</label>
+                            <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" placeholder="Harga Barang" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="foto">Foto Barang (JPG/PNG/WEBP, Max 2MB)</label>
+                            <input type="file" id="foto" name="foto" class="form-control" accept="image/*">
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="foto">Foto Barang (JPG/PNG/WEBP, Max 2MB)</label>
-                        <input type="file" id="foto" name="foto" class="form-control" accept="image/*">
+                        <label for="deskripsi">Deskripsi</label>
+                        <textarea id="deskripsi" name="deskripsi" class="form-control" rows="2" placeholder="Deskripsi Barang"></textarea>
                     </div>
 
                     <button type="submit" name="add_item" class="btn btn-primary">Simpan Barang</button>
@@ -332,7 +340,7 @@ $token = generate_csrf_token();
             </div>
         <?php endif; ?>
 
-        <!-- Form Edit (Only Admin & Petugas) -->
+        <!-- Form Edit (Only Staff & Manager) -->
         <?php 
         if ($can_edit && isset($_GET['edit_id'])) {
             $edit_id = intval($_GET['edit_id']);
@@ -375,20 +383,27 @@ $token = generate_csrf_token();
                         </div>
                     </div>
 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="price_edit">Harga Barang (Rp)</label>
+                            <input type="number" id="price_edit" name="price" class="form-control" min="0" step="0.01" value="<?= esc($edit_row['price']) ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="foto_edit">Foto Barang Baru (Kosongkan jika tidak diganti)</label>
+                            <input type="file" id="foto_edit" name="foto" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+
+                    <?php if ($edit_row['foto']): ?>
+                        <div style="margin-bottom: 15px;">
+                            <p style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Foto saat ini:</p>
+                            <img src="/uploads/<?= esc($edit_row['foto']) ?>" class="img-preview" alt="Foto">
+                        </div>
+                    <?php endif; ?>
+
                     <div class="form-group">
                         <label for="deskripsi_edit">Deskripsi</label>
                         <textarea id="deskripsi_edit" name="deskripsi" class="form-control" rows="2"><?= esc($edit_row['deskripsi']) ?></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="foto_edit">Foto Barang Baru (Kosongkan jika tidak diganti)</label>
-                        <input type="file" id="foto_edit" name="foto" class="form-control" accept="image/*">
-                        <?php if ($edit_row['foto']): ?>
-                            <div style="margin-top: 10px;">
-                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Foto saat ini:</p>
-                                <img src="/uploads/<?= esc($edit_row['foto']) ?>" class="img-preview" alt="Foto">
-                            </div>
-                        <?php endif; ?>
                     </div>
 
                     <button type="submit" name="edit_item" class="btn btn-success">Perbarui Barang</button>
@@ -423,6 +438,7 @@ $token = generate_csrf_token();
                         <th style="width: 120px;">Kode Barang</th>
                         <th>Nama Barang</th>
                         <th style="width: 150px;">Kategori</th>
+                        <th style="width: 120px;">Harga</th>
                         <th style="width: 100px;">Stok</th>
                         <th>Deskripsi</th>
                         <?php if ($can_edit): ?>
@@ -448,6 +464,7 @@ $token = generate_csrf_token();
                             <td><strong><?= esc($row['kode_barang']) ?></strong></td>
                             <td><?= esc($row['nama_barang']) ?></td>
                             <td><?= esc($row['category_name']) ?></td>
+                            <td>Rp <?= number_format($row['price'], 2, ',', '.') ?></td>
                             <td>
                                 <?php if ($row['stok'] <= 0): ?>
                                     <span style="color: var(--danger-color); font-weight: bold;">Habis</span>
@@ -459,18 +476,20 @@ $token = generate_csrf_token();
                             <?php if ($can_edit): ?>
                                 <td style="text-align: center;">
                                     <a href="/items/index.php?edit_id=<?= esc($row['id']) ?>" class="btn btn-success btn-sm">Edit</a>
-                                    <form action="/items/index.php" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus barang ini?');">
-                                        <input type="hidden" name="csrf_token" value="<?= esc($token) ?>">
-                                        <input type="hidden" name="id" value="<?= esc($row['id']) ?>">
-                                        <button type="submit" name="delete_item" class="btn btn-danger btn-sm">Hapus</button>
-                                    </form>
+                                    <?php if ($can_delete): ?>
+                                        <form action="/items/index.php" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus barang ini?');">
+                                            <input type="hidden" name="csrf_token" value="<?= esc($token) ?>">
+                                            <input type="hidden" name="id" value="<?= esc($row['id']) ?>">
+                                            <button type="submit" name="delete_item" class="btn btn-danger btn-sm">Hapus</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                             <?php endif; ?>
                         </tr>
                     <?php 
                         }
                     } else {
-                        echo "<tr><td colspan='" . ($can_edit ? 8 : 7) . "' style='text-align:center;'>Data tidak ditemukan.</td></tr>";
+                        echo "<tr><td colspan='" . ($can_edit ? 9 : 8) . "' style='text-align:center;'>Data tidak ditemukan.</td></tr>";
                     }
                     ?>
                 </tbody>

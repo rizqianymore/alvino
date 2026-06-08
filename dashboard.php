@@ -7,33 +7,33 @@ $username = $_SESSION['username'];
 $name = $_SESSION['name'];
 
 // Fetch Statistics
-$total_items = 0;
-$total_categories = 0;
-$total_stock = 0;
-$total_transactions = 0;
+$total_products = 0;
+$total_suppliers = 0;
+$total_incoming = 0;
+$total_outgoing = 0;
 
-// Total Items
+// Total Products
 if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM items")) {
     $row = mysqli_fetch_assoc($result);
-    $total_items = $row['cnt'];
+    $total_products = $row['cnt'];
 }
 
-// Total Categories
-if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM categories")) {
+// Total Suppliers
+if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM suppliers")) {
     $row = mysqli_fetch_assoc($result);
-    $total_categories = $row['cnt'];
+    $total_suppliers = $row['cnt'];
 }
 
-// Total Stock
-if ($result = mysqli_query($conn, "SELECT SUM(stok) as sum_stok FROM items")) {
+// Total Incoming Stock
+if ($result = mysqli_query($conn, "SELECT SUM(qty) as sum_qty FROM transactions WHERE tipe = 'Masuk'")) {
     $row = mysqli_fetch_assoc($result);
-    $total_stock = $row['sum_stok'] ?? 0;
+    $total_incoming = $row['sum_qty'] ?? 0;
 }
 
-// Total Transactions
-if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM transactions")) {
+// Total Outgoing Stock
+if ($result = mysqli_query($conn, "SELECT SUM(qty) as sum_qty FROM transactions WHERE tipe = 'Keluar'")) {
     $row = mysqli_fetch_assoc($result);
-    $total_transactions = $row['cnt'];
+    $total_outgoing = $row['sum_qty'] ?? 0;
 }
 ?>
 <!DOCTYPE html>
@@ -52,10 +52,9 @@ if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM transactions")) {
             <li><a href="/dashboard.php" class="active">Dashboard</a></li>
             <li><a href="/categories/index.php">Kategori Barang</a></li>
             <li><a href="/items/index.php">Data Barang</a></li>
-            <?php if ($role === 'Admin' || $role === 'Petugas'): ?>
-                <li><a href="/transactions/index.php">Transaksi Barang</a></li>
-            <?php endif; ?>
-            <?php if ($role === 'Admin'): ?>
+            <li><a href="/suppliers/index.php">Data Supplier</a></li>
+            <li><a href="/transactions/index.php">Transaksi Barang</a></li>
+            <?php if ($role === 'Warehouse Manager'): ?>
                 <li><a href="/users/index.php">Kelola User</a></li>
             <?php endif; ?>
             <li><a href="/report/index.php">Laporan</a></li>
@@ -74,20 +73,20 @@ if ($result = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM transactions")) {
 
         <div class="card-grid">
             <div class="card">
-                <h3>Total Kategori</h3>
-                <div class="value"><?= esc($total_categories) ?></div>
+                <h3>Total Produk</h3>
+                <div class="value"><?= esc($total_products) ?></div>
             </div>
             <div class="card">
-                <h3>Total Jenis Barang</h3>
-                <div class="value"><?= esc($total_items) ?></div>
+                <h3>Total Supplier</h3>
+                <div class="value"><?= esc($total_suppliers) ?></div>
             </div>
             <div class="card">
-                <h3>Total Stok Barang</h3>
-                <div class="value"><?= esc($total_stock) ?></div>
+                <h3>Total Barang Masuk</h3>
+                <div class="value"><?= esc($total_incoming) ?></div>
             </div>
             <div class="card">
-                <h3>Total Transaksi</h3>
-                <div class="value"><?= esc($total_transactions) ?></div>
+                <h3>Total Barang Keluar</h3>
+                <div class="value"><?= esc($total_outgoing) ?></div>
             </div>
         </div>
 
