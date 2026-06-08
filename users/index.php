@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $phone = trim($_POST['phone'] ?? '');
 
             // Prevent self-demotion or self-deletion from Warehouse Manager to maintain system availability
-            if ($id === $_SESSION['user_id'] && $role !== 'Warehouse Manager') {
+            if ($id == $_SESSION['user_id'] && $role !== 'Warehouse Manager') {
                 $error = "Anda tidak dapat mengubah role Anda sendiri dari Warehouse Manager.";
             }
 
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = intval($_POST['id'] ?? 0);
             
             // Prevent deleting current logged-in user
-            if ($id === $_SESSION['user_id']) {
+            if ($id == $_SESSION['user_id']) {
                 $error = "Anda tidak dapat menghapus akun Anda sendiri.";
             } else {
                 $stmt = mysqli_prepare($conn, "DELETE FROM users WHERE id = ?");

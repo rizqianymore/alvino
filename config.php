@@ -19,9 +19,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Database Credentials
-define('DB_HOST', '127.0.0.1');
-define('DB_USER', 'gudang_user'); // default database user
-define('DB_PASS', '');            // default empty password
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 define('DB_NAME', 'pergudangan');
 
 // Connect to MySQL server (initially without database to allow auto-creation)
