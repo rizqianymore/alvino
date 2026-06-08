@@ -10,9 +10,17 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 
 // Check Lockout
-if (isset($_SESSION['lockout_time']) && time() < $_SESSION['lockout_time']) {
-    $remaining = $_SESSION['lockout_time'] - time();
-    $error = "Terlalu banyak percobaan login salah. Silakan coba lagi dalam " . $remaining . " detik.";
+if (isset($_SESSION['lockout_time'])) {
+    if (time() < $_SESSION['lockout_time']) {
+        $remaining = $_SESSION['lockout_time'] - time();
+        $error = "Terlalu banyak percobaan login salah. Silakan coba lagi dalam " . $remaining . " detik.";
+    } else {
+        unset($_SESSION['login_attempts']);
+        unset($_SESSION['lockout_time']);
+    }
+}
+if (!isset($_SESSION['lockout_time']) && isset($_SESSION['login_attempts']) && $_SESSION['login_attempts'] >= 3) {
+    unset($_SESSION['login_attempts']);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -66,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($_SESSION['login_attempts'] >= 3) {
-                    $_SESSION['lockout_time'] = time() + 300; // 5 minutes lockout
-                    $error = "Terlalu banyak percobaan login salah. Akun Anda dikunci selama 5 menit.";
+                    $_SESSION['lockout_time'] = time() + 30; // 30 seconds lockout
+                    $error = "Terlalu banyak percobaan login salah. Akun Anda dikunci selama 30 detik.";
                 } else {
                     $error = "Username atau password salah. (Sisa percobaan: " . (3 - $_SESSION['login_attempts']) . ")";
                 }
